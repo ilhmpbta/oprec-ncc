@@ -20,7 +20,7 @@ pipeline {
 
         stage('Setup Environment') {
             steps {
-                sh 'apk add --no-cache gcc musl-dev'
+                sh 'apk add --no-cache gcc musl-dev openjdk17-jre'
                 sh 'pip install -r requirements.txt pytest pytest-cov flake8'
             }
         }
