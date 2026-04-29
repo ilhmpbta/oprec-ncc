@@ -44,7 +44,7 @@ pipeline {
             steps {
                 withSonarQubeEnv("${SONARQUBE_ENV}") {
                     sh """
-                        ${SCANNER_HOME}/sonar-scanner-*/bin/sonar-scanner \
+                        ${SCANNER_HOME}/bin/sonar-scanner \
                           -Dsonar.projectKey=ncc-health \
                           -Dsonar.projectName=ncc-health \
                           -Dsonar.sources=. \
