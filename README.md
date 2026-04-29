@@ -25,6 +25,62 @@
 
 # Laporan Penugasan-2:CI/CD
 
+## 0. Setup *Docker-outside-of-Docker* (Dood) w/ Socket Mount
+
+1. Install Docker
+   ```bash
+   sudo apt install docker.io
+   sudo docker network create jenkins
+   ```
+
+2. Buat `Dockerfile` jenkins dengan isinya
+   ```Dockerfile
+   FROM jenkins/jenkins:2.541.3-jdk21
+   USER root
+   RUN apt-get update && apt-get install -y lsb-release ca-certificates curl && \
+   install -m 0755 -d /etc/apt/keyrings && \
+   curl -fsSL https://download.docker.com/linux/debian/gpg -o /etc/apt/keyrings/docker.asc && \
+   chmod a+r /etc/apt/keyrings/docker.asc && \
+   echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] \
+   https://download.docker.com/linux/debian $(. /etc/os-release && echo \"$VERSION_CODENAME\") stable" \
+   | tee /etc/apt/sources.list.d/docker.list > /dev/null && \
+   apt-get update && apt-get install -y docker-ce-cli && \
+   apt-get clean && rm -rf /var/lib/apt/lists/*
+   USER jenkins
+   RUN jenkins-plugin-cli --plugins "blueocean docker-workflow json-path-api"
+   ```
+
+3. Jalankan jenkins dengan mount socket
+   ```bash
+   docker run \
+   --name jenkins-blueocean \
+   --restart=on-failure \
+   --detach \
+   --network jenkins \
+   -u root \
+   --publish 8080:8080 \
+   --publish 50000:50000 \
+   --volume jenkins-data:/var/jenkins_home \
+   --volume /var/run/docker.sock:/var/run/docker.sock \
+   myjenkins-blueocean:dood
+   ```
+
+4. Attach Sonarqube to the same network as de jenkins
+   ```bash
+   sudo docker volume create --name sonarqube_data
+   sudo docker volume create --name sonarqube_logs
+   sudo docker volume create --name sonarqube_extensions
+
+   sudo docker run -d \
+   --name sonarqube \
+   --network jenkins \
+   -p 9000:9000 \
+   -v sonarqube_data:/opt/sonarqube/data \
+   -v sonarqube_extensions:/opt/sonarqube/extensions \
+   -v sonarqube_logs:/opt/sonarqube/logs \
+   sonarqube
+   ```
+
 ## 1. Deskripsi Pipeline
 Pipeline ini adalah sebuah *Continuous Integration* (CI) berarsitektur *Docker-outside-of-Docker* (DooD) yang didefinisikan secara deklaratif menggunakan `Jenkinsfile`. Pipeline dirancang untuk mengotomatisasi proses pengujian dan analisis kualitas kode untuk aplikasi berbasis Python (Flask).
 
